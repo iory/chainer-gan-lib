@@ -27,12 +27,13 @@ class Updater(chainer.training.StandardUpdater):
         z0, mean, var = self.enc(x_real)
         x0 = self.gen(z0)
         y0, l0 = self.dis(x0)
-        loss_enc = F.gaussian_kl_divergence(mean, var) / float(l0.data.size)
-        loss_gen = 0
+
+        loss_enc = F.gaussian_kl_divergence(mean, var) / batch_size
         loss_gen = F.softmax_cross_entropy(y0, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
         loss_dis = F.softmax_cross_entropy(y0, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
+
         # train generator
-        z1 = chainer.Variable(xp.random.normal(0, 1, (batch_size, self.enc.latent_size)).astype(np.float32))
+        z1 = chainer.Variable(xp.asarray(self.gen.make_hidden(batch_size)))
         x1 = self.gen(z1)
         y1, l1 = self.dis(x1)
         loss_gen += F.softmax_cross_entropy(y1, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
@@ -40,7 +41,7 @@ class Updater(chainer.training.StandardUpdater):
         # train discriminator
         y2, l2 = self.dis(chainer.Variable(xp.asarray(x)))
         loss_enc += F.mean_squared_error(l0, l2)
-        loss_gen += 0.1 * F.mean_squared_error(l0, l2)
+        loss_gen += F.mean_squared_error(l0, l2) * l0.data.shape[2] * l0.data.shape[3]
         loss_dis += F.softmax_cross_entropy(y2, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
 
         self.enc.cleargrads()
