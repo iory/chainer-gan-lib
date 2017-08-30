@@ -124,4 +124,4 @@ class CelebA(chainer.dataset.DatasetMixin):
             else:
                 raise ValueError('invalid image type')
 
-        return image, attr
+        return image
