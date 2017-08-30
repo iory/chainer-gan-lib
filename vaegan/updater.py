@@ -23,26 +23,57 @@ class Updater(chainer.training.StandardUpdater):
             x.append(np.asarray(batch[i]).astype("f"))
         x_real = chainer.Variable(xp.asarray(x))
 
-        # encode
-        z0, mean, var = self.enc(x_real)
-        x0 = self.gen(z0)
-        y0, l0 = self.dis(x0)
+        # # encode
+        # z0, mean, var = self.enc(x_real)
+        # x0 = self.gen(z0)
+        # y0, l0 = self.dis(x0)
 
-        loss_enc = F.gaussian_kl_divergence(mean, var) / batch_size
-        loss_gen = F.softmax_cross_entropy(y0, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
-        loss_dis = F.softmax_cross_entropy(y0, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
+        # loss_enc = F.gaussian_kl_divergence(mean, var) / batch_size
+        # loss_gen = F.softmax_cross_entropy(y0, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+        # loss_dis = F.softmax_cross_entropy(y0, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
 
-        # train generator
-        z1 = chainer.Variable(xp.asarray(self.gen.make_hidden(batch_size)))
-        x1 = self.gen(z1)
-        y1, l1 = self.dis(x1)
-        loss_gen += F.softmax_cross_entropy(y1, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
-        loss_dis += F.softmax_cross_entropy(y1, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
-        # train discriminator
-        y2, l2 = self.dis(chainer.Variable(xp.asarray(x)))
-        loss_enc += F.mean_squared_error(l0, l2)
-        loss_gen += F.mean_squared_error(l0, l2) * l0.data.shape[2] * l0.data.shape[3]
-        loss_dis += F.softmax_cross_entropy(y2, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+        # # train generator
+        # z1 = chainer.Variable(xp.asarray(self.gen.make_hidden(batch_size)))
+        # x1 = self.gen(z1)
+        # y1, l1 = self.dis(x1)
+        # loss_gen += F.softmax_cross_entropy(y1, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+        # loss_dis += F.softmax_cross_entropy(y1, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
+        # # train discriminator
+        # y2, l2 = self.dis(chainer.Variable(xp.asarray(x)))
+        # loss_enc += F.mean_squared_error(l0, l2)
+        # loss_gen += F.mean_squared_error(l0, l2) * l0.data.shape[2] * l0.data.shape[3]
+        # loss_dis += F.softmax_cross_entropy(y2, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+
+        # real image
+        y_real, l2_real = self.dis(x)
+        L_dis_real = F.softmax_cross_entropy(y_real,
+                                             chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+
+        # fake image from random noize
+        z = chainer.Variable(xp.asarray(self.gen.make_hidden(batch_size)))
+        x_fake = self.gen(z)
+        y_fake, _ = self.dis(x_fake)
+        L_gen_fake = F.softmax_cross_entropy(y_fake,
+                                             chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+        L_dis_fake = F.softmax_cross_entropy(y_fake,
+                                             chainer.Variable(xp.ones(batch_size).astype(np.int32)))
+
+        # fake image from reconstruction
+        z_rec, mu_z, ln_var_z = self.enc(x)
+        x_rec = self.gen(z_rec)
+        y_rec, l2_rec  = self.dis(x_rec)
+
+        L_prior = F.gaussian_kl_divergence(mu_z, ln_var_z) / batch_size
+        L_gen_rec = F.softmax_cross_entropy(y_rec, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
+        L_dis_rec = F.softmax_cross_entropy(y_rec, chainer.Variable(xp.ones(batch_size).astype(np.int32)))
+
+        L_rec = F.mean_squared_error(l2_real, l2_rec) * l2_real.data.shape[2] * l2_real.data.shape[3]
+
+        # calc loss
+        loss_dis = L_dis_real + 0.5 * L_dis_fake + 0.5 * L_dis_rec
+        loss_enc = L_prior + L_rec
+        loss_gen = L_gen_fake + L_gen_rec + L_rec
+
 
         self.enc.cleargrads()
         loss_enc.backward()
