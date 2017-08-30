@@ -55,9 +55,9 @@ updater_args = {
 
 
 from vaegan.updater import Updater
-encoder = common.net.VAEEncoder(density=4, size=32)
-generator = common.net.DCGANGenerator(n_hidden=100, ch=256, bottom_width=2)
-discriminator = common.net.DCGANDiscriminator(ch=256, bottom_width=2)
+encoder = common.net.VAEEncoder(size=32)
+generator = common.net.DCGANGenerator(n_hidden=100)
+discriminator = common.net.DCGANDiscriminator()
 models = [encoder, generator, discriminator]
 
 

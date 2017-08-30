@@ -392,28 +392,24 @@ class ResnetDiscriminator(chainer.Chain):
 
 
 class VAEEncoder(chainer.Chain):
-    def __init__(self, density=1, size=64, latent_size=100, ch=3,
-                 wscale=0.02):
+    def __init__(self, size=64, latent_size=100, input_ch=3,
+                 ch=1024, wscale=0.02):
         assert(size % 16 == 0)
         initial_size = size // 16
         self.latent_size = latent_size
         w = chainer.initializers.Normal(wscale)
         super(VAEEncoder, self).__init__()
         with self.init_scope():
-            self.dc1 = L.Convolution2D(ch, 32 * density, 4, stride=2, pad=1,
-                                       initialW=w)
-            self.dc2 = L.Convolution2D(32 * density, 64 * density, 4, stride=2, pad=1,
-                                       initialW=w)
-            self.norm2 = L.BatchNormalization(64 * density)
-            self.dc3 = L.Convolution2D(64 * density, 128 * density, 4, stride=2, pad=1,
-                                       initialW=w)
-            self.norm3 = L.BatchNormalization(128 * density)
-            self.dc4 = L.Convolution2D(128 * density, 256 * density, 4, stride=2, pad=1,
-                                       initialW=w)
-            self.norm4 = L.BatchNormalization(256 * density)
-            self.mean = L.Linear(initial_size * initial_size * 256 * density,
+            self.dc1 = L.Convolution2D(input_ch, ch // 8, 4, 2, 1, initialW=w)
+            self.dc2 = L.Convolution2D(ch // 8, ch // 4, 4, 2, 1, initialW=w)
+            self.norm2 = L.BatchNormalization(ch // 4)
+            self.dc3 = L.Convolution2D(ch // 4, ch // 2, 4, 2, 1, initialW=w)
+            self.norm3 = L.BatchNormalization(ch // 2)
+            self.dc4 = L.Convolution2D(ch // 2, ch // 1, 4, 2, 1, initialW=w)
+            self.norm4 = L.BatchNormalization(ch // 1)
+            self.mean = L.Linear(initial_size * initial_size * ch,
                                  latent_size, initialW=w)
-            self.var = L.Linear(initial_size * initial_size * 256 * density,
+            self.var = L.Linear(initial_size * initial_size * ch,
                                 latent_size, initialW=w)
 
     def __call__(self, x):
