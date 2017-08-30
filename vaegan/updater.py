@@ -74,7 +74,6 @@ class Updater(chainer.training.StandardUpdater):
         loss_enc = L_prior + L_rec
         loss_gen = L_gen_fake + L_gen_rec + L_rec
 
-
         self.enc.cleargrads()
         loss_enc.backward()
         enc_optimizer.update()

@@ -10,6 +10,7 @@ from chainer.training import extensions
 sys.path.append(os.path.dirname(__file__))
 
 from common.dataset import Cifar10Dataset
+from common.dataset import ImagenetDataset
 from common.evaluation import sample_generate, sample_generate_light, calc_inception, calc_FID
 from common.record import record_setting
 import common.net
@@ -42,7 +43,8 @@ record_setting(args.out)
 report_keys = ["loss_enc", "loss_dis", "loss_gen", "inception_mean", "inception_std", "FID"]
 
 # Set up dataset
-train_dataset = Cifar10Dataset()
+# train_dataset = Cifar10Dataset()
+train_dataset = ImagenetDataset()
 train_iter = chainer.iterators.SerialIterator(train_dataset, args.batchsize)
 
 # Setup algorithm specific networks and updaters
@@ -55,7 +57,7 @@ updater_args = {
 
 
 from vaegan.updater import Updater
-encoder = common.net.VAEEncoder(size=32)
+encoder = common.net.VAEEncoder(size=256)
 generator = common.net.DCGANGenerator(n_hidden=100, z_distribution="normal")
 discriminator = common.net.DCGANDiscriminator()
 models = [encoder, generator, discriminator]
