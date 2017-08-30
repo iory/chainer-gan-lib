@@ -2,10 +2,14 @@ import argparse
 import os
 import sys
 
+import numpy as np
 import chainer
 from chainer import training
 from chainer.training import extension
 from chainer.training import extensions
+from chainer.datasets import TransformDataset
+from chainercv.transforms import random_rotate
+from chainercv.transforms.image.resize import resize
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -45,7 +49,19 @@ report_keys = ["loss_enc", "loss_dis", "loss_gen", "inception_mean", "inception_
 
 # Set up dataset
 # train_dataset = Cifar10Dataset()
-train_dataset = CelebA()
+# train_dataset = CelebA()
+dataset = np.load('./hrp2.npz')['arr_0']
+
+
+def transform(in_data):
+    img = in_data
+    img = img.astype(np.float32).transpose((2, 0, 1))
+    img /= 255.0
+    img = resize(img, (128, 128))
+    return img
+
+
+train_dataset = TransformDataset(dataset, transform)
 train_iter = chainer.iterators.SerialIterator(train_dataset, args.batchsize)
 
 # Setup algorithm specific networks and updaters
@@ -58,7 +74,7 @@ updater_args = {
 
 
 from vaegan.updater import Updater
-size = 64
+size = 128
 bottom_width = (size // 8)
 encoder = common.net.VAEEncoder(size=size)
 generator = common.net.DCGANGenerator(n_hidden=100, bottom_width=bottom_width,
