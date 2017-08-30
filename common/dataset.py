@@ -77,3 +77,51 @@ class ImagenetDataset(dataset_mixin.DatasetMixin):
             except Exception as e:
                 print(i, fn, str(e))
         return preprocess_image(img, crop_width=self.crop_width)
+
+
+class CelebA(chainer.dataset.DatasetMixin):
+    def __init__(self, dataset_home='/home/iory/dataset', image_size=64, image_type='sigmoid', nodivide=False, type='train'):
+        self.image_type = image_type
+        self.nodivide = nodivide
+        self.name = 'celeba'
+        self.n_imgs = 202599
+        self.n_attrs = 40
+        self.image_size = image_size
+        self.data_dir = os.path.join(dataset_home, self.name)
+        self._npz_path = os.path.join(self.data_dir, self.name + '.npz')
+        self.img_dir = os.path.join(self.data_dir, 'img_align_celeba')
+
+    def __len__(self):
+        return self.n_imgs
+
+    def get_image(self, idx):
+        img_path = os.path.join(self.img_dir, '%.6d.jpg' % (idx + 1))
+        return Image.open(img_path)
+
+    def get_attributes(self, idx):
+        return None
+
+    def get_example(self, i):
+        image = self.get_image(i)
+        attr = self.get_attributes(i)
+
+        offset_x = np.random.randint(8) + 13
+        offset_y = np.random.randint(8) + 33
+        w = 144
+        h = 144
+        image = np.asarray(image.convert('RGB').
+                           crop((offset_x, offset_y, offset_x + w, offset_y + h)).
+                           resize((self.image_size, self.image_size)))
+
+        image = image.astype(np.float32).transpose((2, 0, 1))
+
+        # pre-process
+        if not self.nodivide:
+            if self.image_type == 'tanh':
+                image = image / 127.5 - 1
+            elif self.image_type == 'sigmoid':
+                image /= 255.
+            else:
+                raise ValueError('invalid image type')
+
+        return image, attr
