@@ -59,7 +59,7 @@ updater_args = {
 
 from vaegan.updater import Updater
 size = 64
-bottom_width = (size // 16)
+bottom_width = (size // 8)
 encoder = common.net.VAEEncoder(size=size)
 generator = common.net.DCGANGenerator(n_hidden=100, bottom_width=bottom_width,
                                       ch=256, z_distribution="normal")
