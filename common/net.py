@@ -392,27 +392,29 @@ class ResnetDiscriminator(chainer.Chain):
 
 
 class VAEEncoder(chainer.Chain):
-    def __init__(self, density=1, size=64, latent_size=100, ch=3):
+    def __init__(self, density=1, size=64, latent_size=100, ch=3,
+                 wscale=0.02):
         assert(size % 16 == 0)
         initial_size = size // 16
         self.latent_size = latent_size
+        w = chainer.initializers.Normal(wscale)
         super(VAEEncoder, self).__init__()
         with self.init_scope():
             self.dc1 = L.Convolution2D(ch, 32 * density, 4, stride=2, pad=1,
-                                       wscale=0.02 * math.sqrt(4 * 4 * ch * density))
+                                       initialW=w)
             self.dc2 = L.Convolution2D(32 * density, 64 * density, 4, stride=2, pad=1,
-                                       wscale=0.02 * math.sqrt(4 * 4 * 32 * density))
+                                       initialW=w)
             self.norm2 = L.BatchNormalization(64 * density)
             self.dc3 = L.Convolution2D(64 * density, 128 * density, 4, stride=2, pad=1,
-                                       wscale=0.02 * math.sqrt(4 * 4 * 64 * density)),
+                                       initialW=w)
             self.norm3 = L.BatchNormalization(128 * density)
             self.dc4 = L.Convolution2D(128 * density, 256 * density, 4, stride=2, pad=1,
-                                       wscale=0.02 * math.sqrt(4 * 4 * 128 * density))
+                                       initialW=w)
             self.norm4 = L.BatchNormalization(256 * density)
-            self.mean = L.Linear(initial_size * initial_size * 256 * density, latent_size,
-                                 wscale=0.02 * math.sqrt(initial_size * initial_size * 256 * density))
-            self.var = L.Linear(initial_size * initial_size * 256 * density, latent_size,
-                                wscale=0.02 * math.sqrt(initial_size * initial_size * 256 * density))
+            self.mean = L.Linear(initial_size * initial_size * 256 * density,
+                                 latent_size, initialW=w)
+            self.var = L.Linear(initial_size * initial_size * 256 * density,
+                                latent_size, initialW=w)
 
     def __call__(self, x):
         xp = cuda.get_array_module(x.data)
@@ -421,7 +423,7 @@ class VAEEncoder(chainer.Chain):
         h3 = F.leaky_relu(self.norm3(self.dc3(h2)))
         h4 = F.leaky_relu(self.norm4(self.dc4(h3)))
         mean = self.mean(h4)
-        var  = self.var(h4)
+        var = self.var(h4)
         rand = xp.random.normal(0, 1, var.shape).astype(np.float32)
-        z  = mean + F.exp(var) * chainer.Variable(rand)
+        z = mean + F.exp(var) * chainer.Variable(rand)
         return (z, mean, var)
