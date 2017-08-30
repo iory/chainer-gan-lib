@@ -192,9 +192,9 @@ class DCGANDiscriminator(chainer.Chain):
         h = F.leaky_relu(self.bn1_0(self.c1_0(h)))
         h = F.leaky_relu(self.bn1_1(self.c1_1(h)))
         h = F.leaky_relu(self.bn2_0(self.c2_0(h)))
-        h = F.leaky_relu(self.bn2_1(self.c2_1(h)))
-        h = F.leaky_relu(self.bn3_0(self.c3_0(h)))
-        return self.l4(h)
+        h3 = F.leaky_relu(self.bn2_1(self.c2_1(h)))
+        h4 = F.leaky_relu(self.bn3_0(self.c3_0(h3)))
+        return self.l4(h4), h3
 
 
 class SNDCGANDiscriminator(chainer.Chain):

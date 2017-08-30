@@ -44,7 +44,7 @@ class Updater(chainer.training.StandardUpdater):
         loss_dis += F.softmax_cross_entropy(y2, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
 
         self.enc.cleargrads()
-        loss_enc.backwards()
+        loss_enc.backward()
         enc_optimizer.update()
 
         self.gen.cleargrads()
