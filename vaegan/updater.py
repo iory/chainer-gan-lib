@@ -21,10 +21,10 @@ class Updater(chainer.training.StandardUpdater):
         x = []
         for i in range(batch_size):
             x.append(np.asarray(batch[i]).astype("f"))
-        x_real = Variable(xp.asarray(x))
+        x_real = chainer.Variable(xp.asarray(x))
 
         # encode
-        z0, mean, var = self.enc(chainer.Variable(x_real))
+        z0, mean, var = self.enc(x_real)
         x0 = self.gen(z0)
         y0, l0 = self.dis(x0)
         loss_enc = F.gaussian_kl_divergence(mean, var) / float(l0.data.size)
