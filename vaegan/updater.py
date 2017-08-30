@@ -45,7 +45,7 @@ class Updater(chainer.training.StandardUpdater):
         # loss_dis += F.softmax_cross_entropy(y2, chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
 
         # real image
-        y_real, l2_real = self.dis(x)
+        y_real, l2_real = self.dis(x_real)
         L_dis_real = F.softmax_cross_entropy(y_real,
                                              chainer.Variable(xp.zeros(batch_size).astype(np.int32)))
 
@@ -59,7 +59,7 @@ class Updater(chainer.training.StandardUpdater):
                                              chainer.Variable(xp.ones(batch_size).astype(np.int32)))
 
         # fake image from reconstruction
-        z_rec, mu_z, ln_var_z = self.enc(x)
+        z_rec, mu_z, ln_var_z = self.enc(x_real)
         x_rec = self.gen(z_rec)
         y_rec, l2_rec  = self.dis(x_rec)
 
