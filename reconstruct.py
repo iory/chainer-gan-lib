@@ -151,17 +151,20 @@ def sample_generate2(gen, dst, rows=10, cols=10, seed=0):
     Image.fromarray(x).save(preview_path)
 
 
-def reconstruct(encoder, generator):
+def reconstruct(encoder, generator, seed=0):
     import cv2
     for i in range(10):
         n = np.random.randint(len(train_dataset))
         img = train_dataset[n]
+        np.random.seed(seed)
         cv2.imwrite('/tmp/original_{}.png'.format(i),
                     np.asarray(255 * img, dtype=np.uint8).transpose((1, 2, 0)))
         z_rec, mu_z, ln_var_z = encoder(chainer.cuda.to_gpu(train_dataset[n][None, ]))
-        x_rec = generator(z_rec)
+        with chainer.using_config('train', False), chainer.using_config('enable_backprop', False):
+            x_rec = generator(z_rec)
         rec_img = np.asarray(chainer.cuda.to_cpu((x_rec * 255.0).data),
                              dtype=np.uint8)
+        np.random.seed()
         cv2.imwrite('/tmp/rec_{}.png'.format(i),
                     rec_img.reshape(3, 128, 128).transpose((1, 2, 0))[...,::-1])
 
