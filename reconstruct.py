@@ -163,7 +163,7 @@ def reconstruct(encoder, generator):
         rec_img = np.asarray(chainer.cuda.to_cpu((x_rec * 255.0).data),
                              dtype=np.uint8)
         cv2.imwrite('/tmp/rec_{}.png'.format(i),
-                    rec_img.reshape(3, 128, 128).transpose((1, 2, 0)))
+                    rec_img.reshape(3, 128, 128).transpose((1, 2, 0))[...,::-1])
 
 
 # sample_generate2(generator, args.out)
